@@ -6,21 +6,23 @@ Act as a **Senior Python Backend Engineer and DevOps-minded Project Maintainer**
 
 You are setting up a clean Python project from scratch in the current empty project folder.
 
-Your goal is to create a professional, production-ready baseline with:
+Your goal is to create a professional, production-ready Python baseline with:
 
-* Virtual environment
+* Python virtual environment
 * Git repository
-* Dependency management
-* Code formatting
-* Linting
-* Static typing
-* Testing
-* Coverage enforcement
+* `.gitignore`
+* `requirements.txt`
+* `pyproject.toml`
+* Ruff for formatting, import sorting, linting, security checks, complexity checks, and code-quality rules
+* Mypy for strict static typing
+* Pytest for testing
+* Pytest coverage enforcement
 * Pre-commit hooks
-* Sensible project structure
-* Initial commit
+* Minimal source package structure
+* Initial passing test suite
+* Initial Git commit
 
-Do not over-engineer the setup. Keep it clean, practical, and maintainable.
+Keep the setup clean, modern, strict, and maintainable.
 
 ---
 
@@ -32,17 +34,60 @@ The project should use:
 
 * Python virtual environment: `.venv`
 * Git for version control
-* `requirements.txt` for dependencies
-* `pyproject.toml` for tool configuration
-* `pytest` for testing
-* `coverage.py` / `pytest-cov` for coverage
-* `black` for formatting
-* `isort` for import sorting
-* `flake8` for linting
+* `requirements.txt` for dependency installation
+* `pyproject.toml` as the central tool configuration file
+* `ruff` instead of Black, Isort, Flake8, and Bandit
 * `mypy` for static typing
+* `pytest` for testing
+* `pytest-cov` / `coverage` for test coverage
 * `pre-commit` for automated checks before commits
 
-The setup should be compatible with a normal Python project and should not assume a specific application framework yet.
+Do not add application frameworks yet.
+
+Do not add FastAPI, Django, Flask, SQLAlchemy, pandas, NumPy, or trading-specific packages unless explicitly requested.
+
+---
+
+## Important Python Version Rule
+
+Use the currently installed local Python version as the source of truth.
+
+The base project configuration currently targets:
+
+```toml
+requires-python = ">=3.14"
+python_version = "3.14"
+```
+
+However, Ruff currently uses:
+
+```toml
+target-version = "py313"
+```
+
+Before finalizing `pyproject.toml`, check the actual Python interpreter version.
+
+Then do one of the following:
+
+1. If the local Python version is Python 3.14 or newer:
+
+   * Keep `requires-python = ">=3.14"`
+   * Keep `mypy.python_version = "3.14"`
+   * If Ruff supports `py314`, use `target-version = "py314"`
+   * If Ruff does not support `py314`, use the highest supported Ruff target version and document the assumption.
+
+2. If the local Python version is Python 3.13:
+
+   * Change `requires-python = ">=3.13"`
+   * Set `target-version = "py313"`
+   * Set `mypy.python_version = "3.13"`
+
+3. If the local Python version is lower than Python 3.13:
+
+   * Stop and report that the project requires Python 3.13+.
+   * Do not continue setup with an older Python version.
+
+Do not leave mismatched Python versions in `pyproject.toml`.
 
 ---
 
@@ -52,30 +97,35 @@ Set up the project fully in the current directory.
 
 Perform the following steps in order:
 
-1. Create a Python virtual environment named `.venv`.
-2. Activate/use the virtual environment for all Python and pip commands.
-3. Initialize a Git repository if one does not already exist.
-4. Create a professional `.gitignore`.
-5. Create a minimal but useful Python package structure.
-6. Create `requirements.txt` with initial development packages.
-7. Install all packages from `requirements.txt`.
-8. Create and configure `pyproject.toml`.
-9. Configure formatting with `black`.
-10. Configure import sorting with `isort`.
-11. Configure type checking with `mypy`.
-12. Configure test settings with `pytest`.
-13. Configure test coverage so that:
+1. Check the installed Python version.
+2. Create a Python virtual environment named `.venv`.
+3. Use the `.venv` Python interpreter for all commands.
+4. Upgrade `pip`.
+5. Initialize a Git repository if one does not already exist.
+6. Create a professional `.gitignore`.
+7. Create the required project structure.
+8. Create `requirements.txt` with the initial development packages.
+9. Install all packages from `requirements.txt`.
+10. Create and configure `pyproject.toml` using the Ruff-first configuration provided below.
+11. Configure Ruff formatting.
+12. Configure Ruff linting.
+13. Configure Ruff import sorting.
+14. Configure Ruff security checks.
+15. Configure Ruff complexity rules.
+16. Configure Mypy strict typing.
+17. Configure Pytest.
+18. Configure coverage so that:
 
     * Overall project coverage must be at least `80%`.
-    * Each tested source file should target at least `80%` coverage.
-    * Coverage failures should fail the test command.
-14. Configure `flake8`.
-15. Configure `pre-commit`.
-16. Install pre-commit hooks.
-17. Create a simple source file and matching test file to verify the setup.
-18. Run all quality checks.
-19. Fix any issues found by the quality checks.
-20. Create the initial Git commit with the message:
+    * Coverage failures must fail the test command.
+    * Each source file should target at least `80%` coverage by test discipline.
+19. Configure Pre-commit.
+20. Install Pre-commit hooks.
+21. Create a simple source file and matching test file to verify the setup.
+22. Run all quality checks.
+23. Fix any issues found by the quality checks.
+24. Run the final full validation suite.
+25. Create the initial Git commit with the message:
 
 ```bash
 chore: initial project setup
@@ -111,12 +161,10 @@ Do not create unnecessary folders yet.
 
 ## Required Initial Packages
 
-Create `requirements.txt` with at least:
+Create `requirements.txt` with:
 
 ```txt
-black
-isort
-flake8
+ruff
 mypy
 pytest
 pytest-cov
@@ -124,15 +172,26 @@ coverage
 pre-commit
 ```
 
+Do not include:
+
+```txt
+black
+isort
+flake8
+bandit
+```
+
+Ruff replaces those tools.
+
 You may add small, standard developer-quality packages only if they clearly improve the baseline setup.
 
-Do not add application frameworks such as FastAPI, Django, Flask, SQLAlchemy, or pandas unless explicitly requested.
+Do not add application frameworks or business-domain packages.
 
 ---
 
 ## `.gitignore` Requirements
 
-Create a `.gitignore` that covers:
+Create `.gitignore` with:
 
 ```gitignore
 # Python
@@ -164,7 +223,7 @@ htmlcov/
 .dmypy.json
 dmypy.json
 
-# Linters / formatters
+# Ruff
 .ruff_cache/
 
 # IDEs / editors
@@ -183,34 +242,127 @@ Thumbs.db
 
 ---
 
-## `pyproject.toml` Requirements
+## Required `pyproject.toml`
 
-Create and update `pyproject.toml` with configuration for:
+Use this as the base configuration.
 
-* Project metadata
-* `black`
-* `isort`
-* `pytest`
-* `coverage`
-* `mypy`
+Important:
 
-Use these standards unless there is a strong reason not to:
+* Reconcile the Python version before writing the final file.
+* Do not leave `requires-python`, `tool.ruff.target-version`, and `tool.mypy.python_version` inconsistent.
+* Keep Ruff as the only formatter, import sorter, linter, and security checker.
+* Keep Mypy for typing.
+* Keep Pytest and Coverage for tests.
 
 ```toml
 [project]
 name = "app"
 version = "0.1.0"
 description = "Initial Python project setup"
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 
-[tool.black]
+[tool.ruff]
+target-version = "py313"
 line-length = 88
-target-version = ["py311"]
+src = ["src", "tests"]
 
-[tool.isort]
-profile = "black"
-line_length = 88
-src_paths = ["src", "tests"]
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "F",
+    "E",
+    "W",
+    "C90",
+    "I",
+    "N",
+    "D",
+    "UP",
+    "YTT",
+    "ASYNC",
+    "S",
+    "BLE",
+    "FBT",
+    "B",
+    "A",
+    "COM",
+    "C4",
+    "DTZ",
+    "T10",
+    "DJ",
+    "EM",
+    "EXE",
+    "FA",
+    "ISC",
+    "ICN",
+    "LOG",
+    "G",
+    "INP",
+    "PIE",
+    "PYI",
+    "PT",
+    "Q",
+    "RSE",
+    "RET",
+    "SLF",
+    "SLOT",
+    "SIM",
+    "TID",
+    "TC",
+    "INT",
+    "ARG",
+    "PTH",
+    "TD",
+    "FIX",
+    "PD",
+    "PGH",
+    "PL",
+    "TRY",
+    "FLY",
+    "NPY",
+    "FAST",
+    "AIR",
+    "PERF",
+    "FURB",
+    "RUF",
+    "ANN",
+]
+
+ignore = [
+    "FBT003",
+    "D203",
+    "D212",
+    "D400",
+    "D401",
+    "D415",
+    "S311",
+    "PERF401",
+    "RET504",
+    "FA102",
+    "TRY003",
+    "EM101",
+    "TC002",
+    "TC003",
+    "COM812",
+    "ISC001",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"test_*.py" = ["S101", "S105", "S106", "S107", "PLR2004", "SLF001", "D", "ARG001", "PLC0415", "EM102", "ANN"]
+"*_test.py" = ["S101", "S105", "S106", "S107", "PLR2004", "SLF001", "D", "ARG001", "PLC0415", "EM102", "ANN"]
+"tests/**/*.py" = ["S101", "S105", "S106", "S107", "PLR2004", "SLF001", "D", "ARG001", "PLC0415", "EM102", "ANN"]
+"conftest.py" = ["S101", "S105", "S106", "S107", "PLR2004", "SLF001", "D", "ARG001", "PLC0415", "EM102", "ANN"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.pytest.ini_options]
 minversion = "7.0"
@@ -241,65 +393,43 @@ exclude_lines = [
 ]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.14"
 strict = true
 mypy_path = "src"
 packages = ["app"]
 warn_unused_configs = true
 warn_return_any = true
 warn_unused_ignores = true
+warn_redundant_casts = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 check_untyped_defs = true
 no_implicit_optional = true
 ```
 
-If the installed Python version is not Python 3.11, adjust the `requires-python`, `target-version`, and `python_version` fields to match the actual local version.
-
 ---
 
-## `flake8` Configuration
+## Pre-commit Requirements
 
-Because `flake8` does not natively read `pyproject.toml`, create a `.flake8` file with:
+Create `.pre-commit-config.yaml`.
 
-```ini
-[flake8]
-max-line-length = 88
-extend-ignore = E203,W503
-exclude =
-    .git,
-    .venv,
-    __pycache__,
-    build,
-    dist,
-    .mypy_cache,
-    .pytest_cache
-```
-
----
-
-## `pre-commit` Requirements
-
-Create `.pre-commit-config.yaml` with hooks for:
+Use Pre-commit hooks for:
 
 * trailing whitespace cleanup
 * end-of-file fixer
 * YAML checks
 * TOML checks
 * large file checks
-* black
-* isort
-* flake8
-* mypy
-
-Use stable official repos where possible.
+* Ruff check with auto-fix
+* Ruff format
+* Mypy
 
 Example baseline:
 
 ```yaml
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -307,29 +437,23 @@ repos:
       - id: check-toml
       - id: check-added-large-files
 
-  - repo: https://github.com/psf/black
-    rev: 24.8.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.0
     hooks:
-      - id: black
-
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.1.1
-    hooks:
-      - id: flake8
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.11.2
+    rev: v1.13.0
     hooks:
       - id: mypy
         additional_dependencies: []
 ```
 
-If newer compatible versions are available in the environment, using newer stable versions is acceptable.
+If newer stable compatible versions are available, use newer versions.
+
+Do not add Black, Isort, Flake8, or Bandit pre-commit hooks.
 
 ---
 
@@ -359,7 +483,7 @@ from app.main import add_numbers
 
 
 def test_add_numbers_returns_sum() -> None:
-    """It returns the sum of two integers."""
+    """Return sum when two integers are provided."""
     assert add_numbers(2, 3) == 5
 ```
 
@@ -367,7 +491,7 @@ def test_add_numbers_returns_sum() -> None:
 
 ## README Requirements
 
-Create a simple `README.md` with:
+Create `README.md` with:
 
 ````md
 # App
@@ -376,9 +500,11 @@ Initial Python project setup.
 
 ## Setup
 
+Create the virtual environment:
+
 ```bash
 python -m venv .venv
-````
+```
 
 Activate the environment:
 
@@ -410,67 +536,90 @@ pre-commit install
 Run checks:
 
 ```bash
-black --check src tests
-isort --check-only src tests
-flake8 src tests
+ruff format --check src tests
+ruff check src tests
 mypy src
 pytest
+pre-commit run --all-files
 ```
-
 ````
 
-Ensure the Markdown formatting is valid.
+Ensure Markdown formatting is valid.
 
 ---
 
 ## Commands to Run
 
-Run the equivalent of these commands, adjusting for the operating system and shell:
+Run the equivalent of these commands, adjusting for the operating system and shell.
 
-```bash
-python -m venv .venv
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+Use the `.venv` Python interpreter.
+
+### Windows PowerShell
+
+```powershell
+py -3 -m venv .venv
+.\.venv\Scripts\python -m pip install --upgrade pip
+.\.venv\Scripts\python -m pip install -r requirements.txt
 
 git init
 
-pre-commit install
+.\.venv\Scripts\pre-commit install
 
-black src tests
-isort src tests
-flake8 src tests
-mypy src
-pytest
+.\.venv\Scripts\ruff format src tests
+.\.venv\Scripts\ruff check src tests --fix
+.\.venv\Scripts\mypy src
+.\.venv\Scripts\pytest
 
-pre-commit run --all-files
+.\.venv\Scripts\pre-commit run --all-files
 
 git add .
 git commit -m "chore: initial project setup"
-````
+```
+
+### macOS / Linux
+
+```bash
+python -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install -r requirements.txt
+
+git init
+
+.venv/bin/pre-commit install
+
+.venv/bin/ruff format src tests
+.venv/bin/ruff check src tests --fix
+.venv/bin/mypy src
+.venv/bin/pytest
+
+.venv/bin/pre-commit run --all-files
+
+git add .
+git commit -m "chore: initial project setup"
+```
 
 Important:
 
-* Use the `.venv` Python interpreter when installing and running tools.
-* On Windows, use `.venv\Scripts\python`.
-* On macOS/Linux, use `.venv/bin/python`.
 * Do not rely on globally installed packages.
+* Use `.venv` executables directly.
+* If `pre-commit run --all-files` modifies files, stage the changes and re-run it.
+* Only commit after all checks pass.
 
 ---
 
-## Quality Gates
+## Required Quality Gates
 
 The setup is only complete when all of these pass:
 
 ```bash
-black --check src tests
-isort --check-only src tests
-flake8 src tests
+ruff format --check src tests
+ruff check src tests
 mypy src
 pytest
 pre-commit run --all-files
 ```
 
-Testing must enforce at least `80%` coverage.
+Coverage must be at least `80%`.
 
 If any check fails:
 
@@ -481,27 +630,75 @@ If any check fails:
 
 ---
 
+## Coverage Requirements
+
+Configure coverage so that:
+
+* `pytest` fails if total coverage is below `80%`.
+* The terminal report shows missing lines.
+* HTML coverage is generated in `htmlcov/`.
+* Branch coverage is enabled.
+
+Target discipline:
+
+* Every production source file should have matching tests.
+* Every production source file should target at least `80%` meaningful test coverage.
+* Do not game coverage with meaningless tests.
+* Do not exclude real logic from coverage without a clear reason.
+
+---
+
 ## Constraints
 
 Do not:
 
+* Add Black.
+* Add Isort.
+* Add Flake8.
+* Add Bandit.
 * Add unnecessary frameworks.
 * Add unnecessary folders.
-* Skip test coverage configuration.
-* Skip pre-commit setup.
-* Commit broken checks.
-* Ignore linting or typing failures.
+* Skip coverage.
+* Skip Mypy.
+* Skip Pre-commit.
+* Commit if checks are failing.
+* Leave Python version settings inconsistent.
 * Use global Python packages when `.venv` exists.
-* Create placeholder files that serve no purpose.
-* Add secrets or local environment files to Git.
+* Add secrets or local `.env` files to Git.
 
 Do:
 
-* Keep the setup minimal.
-* Keep configuration centralized in `pyproject.toml` where supported.
-* Use `.flake8` only because flake8 does not natively support `pyproject.toml`.
+* Use Ruff for formatting.
+* Use Ruff for import sorting.
+* Use Ruff for linting.
+* Use Ruff for security checks.
+* Use Ruff for complexity checks.
+* Use Mypy for strict static typing.
+* Use Pytest for tests.
+* Keep the project minimal.
+* Keep configuration centralized in `pyproject.toml`.
 * Make the project immediately usable.
-* Ensure the initial commit only happens after all checks pass.
+
+---
+
+## Final Validation
+
+Before committing, run:
+
+```bash
+ruff format --check src tests
+ruff check src tests
+mypy src
+pytest
+pre-commit run --all-files
+```
+
+If all pass, commit:
+
+```bash
+git add .
+git commit -m "chore: initial project setup"
+```
 
 ---
 
@@ -509,11 +706,12 @@ Do:
 
 After completing the setup, return a concise summary with:
 
-1. Files created.
-2. Packages installed.
-3. Commands successfully run.
-4. Coverage result.
-5. Git commit hash for the initial setup commit.
-6. Any assumptions made.
+1. Python version used.
+2. Files created.
+3. Packages installed.
+4. Quality commands successfully run.
+5. Coverage result.
+6. Git commit hash.
+7. Any assumptions made.
 
 Do not include unnecessary explanation.
